@@ -15,8 +15,17 @@
       background:linear-gradient(135deg,#d4af37,#a3831b);color:#1b1b1b;box-shadow:0 6px 14px rgba(0,0,0,.25)}
     #pwa-install.show{display:inline-flex}
   </style>
+
+  <style>
+    /* Banner and utility classes moved from inline attributes */
+    .file-protocol-banner{display:none;position:fixed;top:0;left:0;right:0;background:#fff3cd;color:#856404;padding:10px;border-bottom:1px solid #ffeeba;z-index:10000;font-size:13px}
+    .file-protocol-wrap{max-width:980px;margin:0 auto;display:flex;gap:12px;align-items:center}
+    .file-protocol-code{background:#fff;border:1px solid #eee;padding:4px 8px;border-radius:4px}
+    .flex-auto{flex:1}
+    .chip-input-flex{flex:1}
+  </style>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>گنجینه - مدیریت موجودی طلافروشی (R21b)</title>
   <meta name="theme-color" content="#c89b3c" />
   <style>
@@ -45,10 +54,10 @@
     .items-list .item-card{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;margin-bottom:10px}
     .delete-btn{background:none;border:0;color:#ff4757;font-size:20px;cursor:pointer}
     .empty-state{opacity:.7;text-align:center;padding:14px 0}
-    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(22,22,22,.92);display:flex;justify-content:space-around;padding:10px 0;border-top:1px solid rgba(255,255,255,.1);backdrop-filter:blur(5px)}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(22,22,22,.92);display:flex;justify-content:space-around;padding:10px 0;border-top:1px solid rgba(255,255,255,.1);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
     .nav-item{color:#ddd;text-decoration:none;display:flex;flex-direction:column;align-items:center}
     .nav-item.active{color:#d4af37}
-    #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;background:rgba(0,0,0,.82);color:#fff;padding:10px 14px;border-radius:10px;font:600 13px/1.2 system-ui;z-index:99999;transition:opacity .2s ease,transform .2s ease;backdrop-filter:blur(4px)}
+  #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;background:rgba(0,0,0,.82);color:#fff;padding:10px 14px;border-radius:10px;font:600 13px/1.2 system-ui;z-index:99999;transition:opacity .2s ease,transform .2s ease;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
     #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .tab-content{display:none;opacity:0;transform:translateY(8px)}
     .tab-content.active{display:block}
@@ -59,10 +68,11 @@
     .table th{background:rgba(255,255,255,.08);color:#d4af37}
     .muted{opacity:.72}
     .controls{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  .mt-10{margin-top:10px}
     .input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:6px 8px}
     .input::placeholder{color:#ccc}
     /* Manage Panel */
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:10000}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:10000}
     .overlay.show{display:flex}
     .panel{width:100%;max-width:720px;background:#1d1d1d;border-top-left-radius:16px;border-top-right-radius:16px;border:1px solid rgba(255,255,255,.12);padding:12px}
     .panel h3{margin-bottom:8px;color:#d4af37}
@@ -127,9 +137,7 @@
         </div>
         <button class="btn btn-primary" id="add-gold">افزودن طلا</button>
       </div>
-      <div class="items-list" id="gold-items-list">
-        <p class="empty-state">هنوز طلایی اضافه نکرده‌اید</p>
-      </div>
+      <!-- items list removed (managed via summaries) -->
       <div class="card">
         <h3 class="card-title">خلاصه روزانه طلا</h3>
         <div id="gold-daily-summary-wrap">
@@ -155,9 +163,7 @@
         </div>
         <button class="btn btn-primary" id="add-coin">افزودن سکه</button>
       </div>
-      <div class="items-list" id="coin-items-list">
-        <p class="empty-state">هنوز سکه‌ای اضافه نکرده‌اید</p>
-      </div>
+      <!-- items list removed (managed via summaries) -->
       <div class="card">
         <h3 class="card-title">خلاصه روزانه سکه</h3>
         <div id="coin-daily-summary-wrap">
@@ -171,10 +177,14 @@
       <div class="card">
         <h2 class="card-title">ثبت نقدینگی</h2>
         <div class="form-group">
-          <label class="form-label" for="cash-amount">مبلغ نقدی (ریال)</label>
-          <input type="text" class="form-input" id="cash-amount" placeholder="مثال: 1,000,000" inputmode="numeric" />
+          <label class="form-label" for="cash-amount">مبلغ</label>
+          <div class="select-row">
+            <input type="text" class="form-input" id="cash-amount" placeholder="مثال: 1,000,000" inputmode="numeric" aria-label="مبلغ نقدی" />
+            <select id="cash-currency" class="form-input" aria-label="واحد پول"></select>
+            <button class="btn btn-secondary" id="manage-currencies" title="مدیریت ارزها">⚙</button>
+            <button class="btn btn-primary" id="add-cash-entry">افزودن نقدینگی</button>
+          </div>
         </div>
-        <button class="btn btn-primary" id="save-cash">ذخیره نقدینگی</button>
       </div>
       <div class="card">
         <h3 class="card-title">خلاصه روزانه نقدی</h3>
@@ -205,9 +215,7 @@
         </div>
         <button class="btn btn-primary" id="add-bank-card">افزودن کارت بانکی</button>
       </div>
-      <div class="items-list" id="bank-cards-list">
-        <p class="empty-state">هنوز کارت بانکی اضافه نکرده‌اید</p>
-      </div>
+      <!-- items list removed (managed via summaries) -->
       <div class="card">
         <h3 class="card-title">خلاصه روزانه بانک</h3>
         <div id="bank-daily-summary-wrap">
@@ -238,7 +246,7 @@
           <button id="export-combined-json" class="btn btn-secondary">خروجی JSON</button>
           <button id="copy-combined-csv" class="btn btn-secondary">کپی CSV</button>
         </div>
-        <div id="combined-daily-summary-wrap" style="margin-top:10px;">
+  <div id="combined-daily-summary-wrap" class="mt-10">
           <p class="empty-state muted">هنوز داده‌ای برای خلاصه وجود ندارد</p>
         </div>
       </div>
@@ -256,6 +264,16 @@
     <a href="#summary-tab" class="nav-item" data-tab="summary-tab"><span>📊</span><small>خلاصه</small></a>
   </div>
 
+  <!-- Warning banner for file:// dev usage -->
+  <div id="file-protocol-banner" class="file-protocol-banner">
+    <div class="file-protocol-wrap">
+      <div>برای تست کامل PWA و Service Worker لطفاً پروژه را با یک سرور محلی اجرا کنید:</div>
+      <code class="file-protocol-code">python -m http.server 8080</code>
+      <code class="file-protocol-code">npx http-server -p 8080</code>
+      <button id="dismiss-file-banner" class="btn btn-secondary flex-auto">بستن</button>
+    </div>
+  </div>
+
   <div id="toast" role="status" aria-live="polite"></div>
 
   <!-- Manage Options Overlay -->
@@ -264,13 +282,13 @@
       <h3 id="panel-title">مدیریت گزینه‌ها</h3>
       <div class="chips" id="chips"></div>
       <div class="row">
-        <input type="text" id="chip-input" class="input" style="flex:1" placeholder="عنوان گزینه">
+  <input type="text" id="chip-input" class="input chip-input-flex" placeholder="عنوان گزینه">
         <button class="btn btn-primary" id="add-chip">افزودن</button>
       </div>
       <div class="row">
         <button class="btn btn-secondary" id="rename-chip">تغییر نام گزینه انتخاب‌شده</button>
         <button class="btn btn-secondary" id="delete-chip">حذف گزینه انتخاب‌شده</button>
-        <div style="flex:1"></div>
+  <div class="flex-auto"></div>
         <button class="btn btn-primary" id="close-panel">بستن</button>
       </div>
     </div>
@@ -280,13 +298,20 @@
     // ===== Storage =====
     const storageKey = 'ganjinehInventoryR21b';
     let data = JSON.parse(localStorage.getItem(storageKey)) || {
-      golds: [], coins: [], cash: 0, cashDateISO: null, banks: [], currentDateISO: new Date().toISOString(),
+  golds: [], coins: [], cash: 0, cashDateISO: null, cashEntries: [], banks: [], currentDateISO: new Date().toISOString(),
       optionLists: {
         karats: ['18','21','24'],
         coinTypes: ['بهار آزادی','نیم سکه','ربع سکه','سکه گرمی'],
-        bankNames: ['ملی','ملت','صادرات','پارسیان','تجارت','رفاه','سامان']
-      }
+        bankNames: ['ملی','ملت','صادرات','پارسیان','تجارت','رفاه','سامان'],
+        currencies: ['تومان']
+      },
+      cashCurrency: 'تومان'
     };
+    // migrate legacy single cash value into cashEntries for backward compatibility
+    if (data.cash && (!data.cashEntries || !data.cashEntries.length)){
+      const iso = data.cashDateISO || new Date().toISOString();
+      data.cashEntries = [{ currency: data.cashCurrency || 'تومان', amount: Number(data.cash)||0, dateISO: iso }];
+    }
     function saveAll(){ localStorage.setItem(storageKey, JSON.stringify(data)); }
 
     // ===== Throttle saveAll to reduce localStorage churn (added) =====
@@ -300,6 +325,9 @@
       };
     }
     const saveAllThrottled = throttle(()=> localStorage.setItem(storageKey, JSON.stringify(data)), 300);
+  // Editing state for inline summary edits
+  let editing = null; // {type:'gold'|'coin'|'bank', index: number}
+  const originalAddText = {};
 
 
     // ===== Toast =====
@@ -446,6 +474,10 @@ function isValidJalali(jy, jm, jd){
       fillSelect(selC, 'انتخاب نوع سکه', data.optionLists.coinTypes);
       const selB = document.getElementById('bank-name');
       fillSelect(selB, 'انتخاب بانک', data.optionLists.bankNames);
+      // cash currency select
+      const selCur = document.getElementById('cash-currency');
+      fillSelect(selCur, 'واحد پول', data.optionLists.currencies);
+      if (selCur && data.cashCurrency) selCur.value = data.cashCurrency;
     }
 
     const overlay = document.getElementById('overlay');
@@ -461,6 +493,8 @@ function isValidJalali(jy, jm, jd){
       chipInput.value = '';
       renderChips();
       overlay.classList.add('show');
+      // focus input for quicker add
+      setTimeout(()=>{ try{ chipInput.focus(); }catch(e){} }, 60);
     }
     function renderChips(){
       const arr = data.optionLists[currentListKey] || [];
@@ -478,8 +512,12 @@ function isValidJalali(jy, jm, jd){
       const val = chipInput.value.trim();
       if (!val) return;
       const list = data.optionLists[currentListKey];
+      if (!list){ alert('ابتدا یک دسته گزینه را از پنل مدیریت انتخاب کنید'); return; }
       if (!list.includes(val)){ list.push(val); chipInput.value=''; saveAll(); renderChips(); renderSelectOptions(); toast('گزینه اضافه شد'); }
     });
+  // manage currencies button
+  const manageCurrenciesBtn = document.getElementById('manage-currencies');
+  if (manageCurrenciesBtn){ manageCurrenciesBtn.addEventListener('click', (e)=>{ e.preventDefault(); openManagePanel('currencies', 'مدیریت ارزها'); }); }
     document.getElementById('rename-chip').addEventListener('click', ()=>{
       if (!selectedValue){ alert('ابتدا یک گزینه را انتخاب کنید'); return; }
       const newVal = prompt('عنوان جدید:', selectedValue) || '';
@@ -576,77 +614,161 @@ function exportAll(fmt){
 
 // ===== Renderers =====
     function renderLists(){
-      const goldList = document.getElementById('gold-items-list');
-      goldList.innerHTML = data.golds.length ? '' : '<p class="empty-state">هنوز طلایی اضافه نکرده‌اید</p>';
-      data.golds.forEach((g, i)=>{
-        const dt = new Date(g.dateISO); const j = gregorianToJalali(dt.getFullYear(), dt.getMonth()+1, dt.getDate());
-        goldList.insertAdjacentHTML('beforeend', `
-          <div class="item-card">
-            <div class="item-info">عیار: ${esc(g.karat)} — وزن: ${esc(g.weight)} گرم — تاریخ: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</div>
-            <button class="delete-btn" data-type="gold" data-index="${i}" aria-label="حذف مورد ${i+1}">🗑</button>
-          </div>
-        `);
-      });
+      try {
+        const goldList = document.getElementById('gold-items-list');
+        if (goldList){
+          goldList.innerHTML = data.golds.length ? '' : '<p class="empty-state">هنوز طلایی اضافه نکرده‌اید</p>';
+          data.golds.forEach((g, i)=>{
+            const dt = new Date(g.dateISO); const j = gregorianToJalali(dt.getFullYear(), dt.getMonth()+1, dt.getDate());
+            goldList.insertAdjacentHTML('beforeend', `
+              <div class="item-card">
+                <div class="item-info">عیار: ${esc(g.karat)} — وزن: ${esc(g.weight)} گرم — تاریخ: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</div>
+                <button class="delete-btn" data-type="gold" data-index="${i}" aria-label="حذف مورد ${i+1}">🗑</button>
+              </div>
+            `);
+          });
+        }
 
-      const coinList = document.getElementById('coin-items-list');
-      coinList.innerHTML = data.coins.length ? '' : '<p class="empty-state">هنوز سکه‌ای اضافه نکرده‌اید</p>';
-      data.coins.forEach((c, i)=>{
-        const dt = new Date(c.dateISO); const j = gregorianToJalali(dt.getFullYear(), dt.getMonth()+1, dt.getDate());
-        coinList.insertAdjacentHTML('beforeend', `
-          <div class="item-card">
-            <div class="item-info">نوع: ${esc(c.type)} — تعداد: ${c.count} — تاریخ: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</div>
-            <button class="delete-btn" data-type="coin" data-index="${i}" aria-label="حذف مورد ${i+1}">🗑</button>
-          </div>
-        `);
-      });
+        const coinList = document.getElementById('coin-items-list');
+        if (coinList){
+          coinList.innerHTML = data.coins.length ? '' : '<p class="empty-state">هنوز سکه‌ای اضافه نکرده‌اید</p>';
+          data.coins.forEach((c, i)=>{
+            const dt = new Date(c.dateISO); const j = gregorianToJalali(dt.getFullYear(), dt.getMonth()+1, dt.getDate());
+            coinList.insertAdjacentHTML('beforeend', `
+              <div class="item-card">
+                <div class="item-info">نوع: ${esc(c.type)} — تعداد: ${c.count} — تاریخ: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</div>
+                <button class="delete-btn" data-type="coin" data-index="${i}" aria-label="حذف مورد ${i+1}">🗑</button>
+              </div>
+            `);
+          });
+        }
 
-      const bankList = document.getElementById('bank-cards-list');
-      bankList.innerHTML = data.banks.length ? '' : '<p class="empty-state">هنوز کارت بانکی اضافه نکرده‌اید</p>';
-      data.banks.forEach((b, i)=>{
-        const dt = new Date(b.dateISO); const j = gregorianToJalali(dt.getFullYear(), dt.getMonth()+1, dt.getDate());
-        bankList.insertAdjacentHTML('beforeend', `
-          <div class="item-card">
-            <div class="item-info">${esc(b.name)} — ${(+String(b.amount).replace(/,/g,'')).toLocaleString()} ریال — تاریخ: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</div>
-            <button class="delete-btn" data-type="bank" data-index="${i}" aria-label="حذف مورد ${i+1}">🗑</button>
-          </div>
-        `);
-      });
+        const bankList = document.getElementById('bank-cards-list');
+        if (bankList){
+          bankList.innerHTML = data.banks.length ? '' : '<p class="empty-state">هنوز کارت بانکی اضافه نکرده‌اید</p>';
+          data.banks.forEach((b, i)=>{
+            const dt = new Date(b.dateISO); const j = gregorianToJalali(dt.getFullYear(), dt.getMonth()+1, dt.getDate());
+            bankList.insertAdjacentHTML('beforeend', `
+              <div class="item-card">
+                <div class="item-info">${esc(b.name)} — ${(+String(b.amount).replace(/,/g,'')).toLocaleString()} ریال — تاریخ: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</div>
+                <button class="delete-btn" data-type="bank" data-index="${i}" aria-label="حذف مورد ${i+1}">🗑</button>
+              </div>
+            `);
+          });
+        }
+      } catch (err) {
+        console.warn('renderLists skipped due to error:', err);
+      }
     }
     function renderSummary(){
       const summary = document.getElementById('summary-content');
       const totalGoldWeight = data.golds.reduce((s,g)=> s + parseFloat(g.weight||0), 0);
       const totalCoins = data.coins.reduce((s,c)=> s + parseInt(c.count||0), 0);
       const totalBank = data.banks.reduce((s,b)=> s + parseInt(String(b.amount).replace(/,/g,'')||0), 0);
-      const totalCash = data.cash || 0;
+  const totalCash = data.cash || 0;
+  // compute totals per currency from cashEntries
+  const cashTotalsByCurrency = (data.cashEntries || []).reduce((acc,e)=>{ acc[e.currency] = (acc[e.currency]||0) + Number(e.amount); return acc; }, {});
       const now = new Date(); const j = gregorianToJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
       summary.innerHTML = (totalGoldWeight || totalCoins || totalBank || totalCash) ? `
         <p>تاریخ نمایش: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</p>
         <p>مجموع وزن طلا: ${totalGoldWeight.toFixed(3)} گرم</p>
         <p>مجموع سکه‌ها: ${totalCoins} عدد</p>
-        <p>نقدینگی: ${(+totalCash).toLocaleString()} ریال ${data.cashDateISO? '(ثبت: '+(function(){const d=new Date(data.cashDateISO);const jj=gregorianToJalali(d.getFullYear(),d.getMonth()+1,d.getDate());return jj.jy+'/'+String(jj.jm).padStart(2,'0')+'/'+String(jj.jd).padStart(2,'0');})()+')':''}</p>
+  <p>نقدینگی: ${Object.entries(cashTotalsByCurrency).length ? Object.entries(cashTotalsByCurrency).map(([cur,amt])=> `${Number(amt).toLocaleString()} ${esc(cur)}`).join(' | ') : (+totalCash).toLocaleString() + ' ریال'} ${data.cashDateISO? '(ثبت: '+(function(){const d=new Date(data.cashDateISO);const jj=gregorianToJalali(d.getFullYear(),d.getMonth()+1,d.getDate());return jj.jy+'/'+String(jj.jm).padStart(2,'0')+'/'+String(jj.jd).padStart(2,'0');})()+')':''}</p>
         <p>مجموع موجودی بانک: ${totalBank.toLocaleString()} ریال</p>
       ` : '<p class="empty-state">اطلاعاتی برای نمایش وجود ندارد</p>';
     }
     function renderGoldDailySummary(){
       const wrap = document.getElementById('gold-daily-summary-wrap'); if (!wrap) return;
       if (!data.golds.length){ wrap.innerHTML = '<p class="empty-state muted">هنوز داده‌ای برای خلاصه وجود ندارد</p>'; return; }
-      const groups = {};
+      // group by date then by karat
+      const groups = {}; // date -> { karats: {karat: {count, weight}}, totalCount, totalWeight }
       data.golds.forEach(g => {
         const d = new Date(g.dateISO);
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         const weight = parseFloat(g.weight||0) || 0;
-        const karat = parseFloat(g.karat||0) || 0;
-        if (!groups[key]) groups[key] = { count:0, weight:0, wKaratSum:0 };
-        groups[key].count += 1; groups[key].weight += weight; groups[key].wKaratSum += karat * weight;
+        const karat = String(g.karat || '');
+        if (!groups[key]) groups[key] = { karats: {}, totalCount:0, totalWeight:0 };
+        if (!groups[key].karats[karat]) groups[key].karats[karat] = { count:0, weight:0 };
+        groups[key].karats[karat].count += 1;
+        groups[key].karats[karat].weight += weight;
+        groups[key].totalCount += 1;
+        groups[key].totalWeight += weight;
       });
       const rows = Object.entries(groups).sort((a,b)=> new Date(b[0]) - new Date(a[0]));
-      let html = '<table class="table"><thead><tr><th>تاریخ</th><th>تعداد</th><th>مجموع وزن (گرم)</th><th>میانگین عیار (وزنی)</th></tr></thead><tbody>';
+  let html = '<table class="table"><thead><tr><th>تاریخ</th><th>عیار</th><th>مجموع وزن (گرم)</th><th>عملیات</th></tr></thead><tbody>';
       rows.forEach(([iso, v])=>{
         const dd = new Date(iso); const j = gregorianToJalali(dd.getFullYear(), dd.getMonth()+1, dd.getDate());
-        const avgK = v.weight ? (v.wKaratSum / v.weight) : 0;
-        html += `<tr><td>${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</td><td>${v.count}</td><td>${v.weight.toFixed(3)}</td><td>${avgK.toFixed(1)}</td></tr>`;
+        const karatEntries = Object.entries(v.karats).sort((a,b)=> parseFloat(b[0]||0) - parseFloat(a[0]||0));
+        karatEntries.forEach(([karat, stats], idx)=>{
+          html += `<tr data-date="${iso}"><td>${idx===0? `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}` : ''}</td><td>${esc(karat)}</td><td>${stats.weight.toFixed(3)}</td><td>${idx===0? `<button class="btn btn-secondary summary-action-edit" data-type="gold" data-date="${iso}">ویرایش</button> <button class="btn btn-secondary summary-action-clear" data-type="gold" data-date="${iso}">پاک‌سازی</button>` : ''}</td></tr>`;
+        });
+      });
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+      // attach handlers (date-level)
+      wrap.querySelectorAll('.summary-action-edit').forEach(b=> b.addEventListener('click', (e)=>{
+        const date = b.dataset.date; // focus gold tab and prefill with last item on that date if any
+        activateTab('gold-tab');
+        const list = data.golds.filter(g=> g.dateISO && g.dateISO.startsWith(date));
+        if (list.length){ const g = list[list.length-1]; document.getElementById('gold-karat').value = g.karat; document.getElementById('gold-weight').value = Number(g.weight).toLocaleString(); }
+      }));
+      wrap.querySelectorAll('.summary-action-clear').forEach(b=> b.addEventListener('click', (e)=>{
+        const date = b.dataset.date; if (!confirm('آیا از حذف تمام رکوردهای این تاریخ برای طلا اطمینان دارید؟')) return;
+        data.golds = data.golds.filter(g=> !g.dateISO || !g.dateISO.startsWith(date)); saveData(); renderGoldDailySummary(); renderLists(); toast('رکوردهای طلا برای آن تاریخ حذف شدند');
+      }));
+    }
+
+    function renderCashDailySummary(){
+      const wrap = document.getElementById('cash-daily-summary-wrap'); if (!wrap) return;
+      const entries = (data.cashEntries || []).slice().sort((a,b)=> new Date(b.dateISO) - new Date(a.dateISO));
+      if (!entries.length){ wrap.innerHTML = '<p class="empty-state muted">هنوز داده‌ای برای خلاصه وجود ندارد</p>'; return; }
+      // group by date -> currency -> total
+      const groups = {};
+      entries.forEach(e=>{
+        const d = new Date(e.dateISO); const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (!groups[key]) groups[key] = { currencies: {}, total: 0 };
+        groups[key].currencies[e.currency] = (groups[key].currencies[e.currency]||0) + Number(e.amount);
+        groups[key].total += Number(e.amount);
+      });
+      const rows = Object.entries(groups).sort((a,b)=> new Date(b[0]) - new Date(a[0]));
+      let html = '<table class="table"><thead><tr><th>تاریخ</th><th>واحد</th><th>مبلغ</th><th>عملیات</th></tr></thead><tbody>';
+      rows.forEach(([iso, v])=>{
+        const dd = new Date(iso); const j = gregorianToJalali(dd.getFullYear(), dd.getMonth()+1, dd.getDate());
+        const dateFa = `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
+        const curEntries = Object.entries(v.currencies);
+        curEntries.forEach(([cur, amt], idx)=>{
+          html += `<tr data-date="${iso}"><td>${idx===0? dateFa : ''}</td><td>${esc(cur)}</td><td>${Number(amt).toLocaleString()}</td><td>${idx===0? `<button class="btn btn-secondary summary-action-clear" data-type="cash" data-date="${iso}">پاک‌سازی</button>` : ''}</td></tr>`;
+        });
       });
       html += '</tbody></table>'; wrap.innerHTML = html;
+      wrap.querySelectorAll('.summary-action-clear').forEach(b=> b.addEventListener('click', ()=>{
+        const date = b.dataset.date; if (!confirm('آیا از حذف تمام رکوردهای این تاریخ برای نقدینگی اطمینان دارید؟')) return;
+        data.cashEntries = data.cashEntries.filter(e=> !e.dateISO || !e.dateISO.startsWith(date)); saveData(); renderCashEntriesList(); renderCashDailySummary(); renderSummary(); toast('رکوردهای نقدی برای آن تاریخ حذف شدند');
+      }));
+    }
+
+    function renderCashEntriesList(){
+      const list = document.getElementById('cash-entries-list'); if (!list) return;
+      const arr = data.cashEntries || [];
+      if (!arr.length){ list.innerHTML = '<p class="empty-state">هنوز رکورد نقدی‌ای اضافه نشده است</p>'; return; }
+      list.innerHTML = '';
+      arr.forEach((e,i)=>{
+        const dt = new Date(e.dateISO); const j = gregorianToJalali(dt.getFullYear(), dt.getMonth()+1, dt.getDate());
+        const div = document.createElement('div'); div.className='item-card';
+        const info = document.createElement('div'); info.className='item-info';
+        info.textContent = `${esc(e.currency)} — ${Number(e.amount).toLocaleString()} — تاریخ: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
+        const editBtn = document.createElement('button'); editBtn.className='btn btn-secondary'; editBtn.textContent='ویرایش';
+        editBtn.addEventListener('click', ()=>{
+          // set edit mode
+          editing = { type: 'cash', index: i };
+          document.getElementById('cash-amount').value = Number(e.amount).toLocaleString();
+          const sel = document.getElementById('cash-currency'); if (sel) sel.value = e.currency;
+          document.getElementById('add-cash-entry').textContent = 'ذخیره تغییرات';
+        });
+        const delBtn = document.createElement('button'); delBtn.className='delete-btn'; delBtn.dataset.type='cash'; delBtn.dataset.index = String(i); delBtn.textContent='🗑';
+        delBtn.addEventListener('click', ()=>{ if (!confirm('حذف این رکورد؟')) return; data.cashEntries.splice(i,1); saveData(); renderCashEntriesList(); renderCashDailySummary(); renderSummary(); });
+        div.appendChild(info); div.appendChild(editBtn); div.appendChild(delBtn); list.appendChild(div);
+      });
     }
     function renderCoinDailySummary(){
       const wrap = document.getElementById('coin-daily-summary-wrap'); if (!wrap) return;
@@ -660,16 +782,30 @@ function exportAll(fmt){
         groups[key].types[type] = (groups[key].types[type]||0) + count; groups[key].total += count;
       });
       const rows = Object.entries(groups).sort((a,b)=> new Date(b[0]) - new Date(a[0]));
-      let html = '<table class="table"><thead><tr><th>تاریخ</th><th>نوع سکه</th><th>تعداد</th><th>جمع همان تاریخ</th></tr></thead><tbody>';
+  let html = '<table class="table"><thead><tr><th>تاریخ</th><th>نوع سکه</th><th>تعداد</th><th>جمع همان تاریخ</th><th>عملیات</th></tr></thead><tbody>';
       rows.forEach(([iso,obj])=>{
         const dd = new Date(iso); const j = gregorianToJalali(dd.getFullYear(), dd.getMonth()+1, dd.getDate());
         const dateFa = `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
         const types = Object.entries(obj.types);
-        types.forEach(([type, cnt], idx)=>{
-          html += `<tr><td>${idx===0?dateFa:''}</td><td>${type}</td><td>${cnt}</td><td>${idx===0?obj.total:''}</td></tr>`;
+  types.forEach(([type, cnt], idx) => {
+          if (idx===0){
+            html += `<tr data-date="${iso}"><td>${dateFa}</td><td>${type}</td><td>${cnt}</td><td>${obj.total}</td><td><button class="btn btn-secondary summary-action-edit" data-type="coin" data-date="${iso}">ویرایش</button> <button class="btn btn-secondary summary-action-clear" data-type="coin" data-date="${iso}">پاک‌سازی</button></td></tr>`;
+          } else {
+            html += `<tr><td></td><td>${type}</td><td>${cnt}</td><td></td><td></td></tr>`;
+          }
         });
       });
       html += '</tbody></table>'; wrap.innerHTML = html;
+      // attach handlers for coin summary
+      wrap.querySelectorAll('.summary-action-edit').forEach(b=> b.addEventListener('click', ()=>{
+        const date = b.dataset.date; activateTab('coins-tab');
+        const list = data.coins.filter(c=> c.dateISO && c.dateISO.startsWith(date));
+        if (list.length){ const c = list[list.length-1]; document.getElementById('coin-type').value = c.type; document.getElementById('coin-count').value = c.count; }
+      }));
+      wrap.querySelectorAll('.summary-action-clear').forEach(b=> b.addEventListener('click', ()=>{
+        const date = b.dataset.date; if (!confirm('آیا از حذف تمام رکوردهای این تاریخ برای سکه اطمینان دارید؟')) return;
+        data.coins = data.coins.filter(c=> !c.dateISO || !c.dateISO.startsWith(date)); saveData(); renderCoinDailySummary(); renderLists(); toast('رکوردهای سکه برای آن تاریخ حذف شدند');
+      }));
     }
     function renderCashDailySummary(){
       const wrap = document.getElementById('cash-daily-summary-wrap'); if (!wrap) return;
@@ -677,9 +813,19 @@ function exportAll(fmt){
       if (!cash || !iso){ wrap.innerHTML = '<p class="empty-state muted">هنوز داده‌ای برای خلاصه وجود ندارد</p>'; return; }
       const d = new Date(iso); const j = gregorianToJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
       const dateFa = `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
-      let html = '<table class="table"><thead><tr><th>تاریخ</th><th>مبلغ نقدی (ریال)</th></tr></thead><tbody>';
-      html += `<tr><td>${dateFa}</td><td>${cash.toLocaleString()}</td></tr></tbody></table>`;
+      let html = '<table class="table"><thead><tr><th>تاریخ</th><th>مبلغ نقدی (ریال)</th><th>عملیات</th></tr></thead><tbody>';
+      html += `<tr><td>${dateFa}</td><td>${cash.toLocaleString()}</td><td><button class="btn btn-secondary" id="summary-edit-cash">ویرایش</button> <button class="btn btn-secondary" id="summary-clear-cash">پاک‌سازی</button></td></tr></tbody></table>`;
       wrap.innerHTML = html;
+      // Attach handlers for inline buttons
+      const sEdit = document.getElementById('summary-edit-cash');
+      if (sEdit) sEdit.addEventListener('click', ()=>{
+        const inp = document.getElementById('cash-amount'); if (!inp) return; inp.focus(); inp.value = (data.cash||0).toLocaleString();
+      });
+      const sClear = document.getElementById('summary-clear-cash');
+      if (sClear) sClear.addEventListener('click', ()=>{
+        if (!confirm('آیا از حذف مقدار نقدی ذخیره‌شده اطمینان دارید؟')) return;
+        data.cash = 0; data.cashDateISO = null; saveData(); renderCashDailySummary(); toast('نقدینگی پاک شد');
+      });
     }
     function renderBankDailySummary(){
       const wrap = document.getElementById('bank-daily-summary-wrap'); if (!wrap) return;
@@ -694,16 +840,30 @@ function exportAll(fmt){
         groups[key].names[name] = (groups[key].names[name]||0) + amt; groups[key].total += amt;
       });
       const rows = Object.entries(groups).sort((a,b)=> new Date(b[0]) - new Date(a[0]));
-      let html = '<table class="table"><thead><tr><th>تاریخ</th><th>نام بانک</th><th>مبلغ (ریال)</th><th>جمع همان تاریخ</th></tr></thead><tbody>';
+  let html = '<table class="table"><thead><tr><th>تاریخ</th><th>نام بانک</th><th>مبلغ (ریال)</th><th>جمع همان تاریخ</th><th>عملیات</th></tr></thead><tbody>';
       rows.forEach(([iso,obj])=>{
         const dd = new Date(iso); const j = gregorianToJalali(dd.getFullYear(), dd.getMonth()+1, dd.getDate());
         const dateFa = `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
         const names = Object.entries(obj.names);
         names.forEach(([name,sum], idx)=>{
-          html += `<tr><td>${idx===0?dateFa:''}</td><td>${name}</td><td>${sum.toLocaleString()}</td><td>${idx===0?obj.total.toLocaleString():''}</td></tr>`;
+          if (idx===0){
+            html += `<tr data-date="${iso}"><td>${dateFa}</td><td>${name}</td><td>${sum.toLocaleString()}</td><td>${obj.total.toLocaleString()}</td><td><button class="btn btn-secondary summary-action-edit" data-type="bank" data-date="${iso}">ویرایش</button> <button class="btn btn-secondary summary-action-clear" data-type="bank" data-date="${iso}">پاک‌سازی</button></td></tr>`;
+          } else {
+            html += `<tr><td></td><td>${name}</td><td>${sum.toLocaleString()}</td><td></td><td></td></tr>`;
+          }
         });
       });
       html += '</tbody></table>'; wrap.innerHTML = html;
+      // attach handlers for bank summary
+      wrap.querySelectorAll('.summary-action-edit').forEach(b=> b.addEventListener('click', ()=>{
+        const date = b.dataset.date; activateTab('bank-tab');
+        const list = data.banks.filter(bk=> bk.dateISO && bk.dateISO.startsWith(date));
+        if (list.length){ const bk = list[list.length-1]; document.getElementById('bank-name').value = bk.name; document.getElementById('bank-amount').value = Number(bk.amount).toLocaleString(); document.getElementById('card-number').value = bk.number || ''; }
+      }));
+      wrap.querySelectorAll('.summary-action-clear').forEach(b=> b.addEventListener('click', ()=>{
+        const date = b.dataset.date; if (!confirm('آیا از حذف تمام رکوردهای این تاریخ برای بانک اطمینان دارید؟')) return;
+        data.banks = data.banks.filter(bk=> !bk.dateISO || !bk.dateISO.startsWith(date)); saveData(); renderBankDailySummary(); renderLists(); toast('رکوردهای بانکی برای آن تاریخ حذف شدند');
+      }));
     }
 
     // ===== Combined Daily Summary =====
@@ -725,11 +885,7 @@ function exportAll(fmt){
         if(!map[key]) map[key] = { goldCount:0, goldWeight:0, coinTotal:0, coinTypes:{}, cash:0, bankTotal:0 };
         map[key].coinTotal += count; map[key].coinTypes[type] = (map[key].coinTypes[type]||0) + count;
       });
-      if (cashISO && cash){
-        const d = new Date(cashISO); const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        if(!map[key]) map[key] = { goldCount:0, goldWeight:0, coinTotal:0, coinTypes:{}, cash:0, bankTotal:0 };
-        map[key].cash = cash;
-      }
+      // Note: cash is rendered only in the dedicated cash tab. Do not inject cash into combined rows to avoid duplicate daily cash summaries.
       banks.forEach(b=>{
         const d = new Date(b.dateISO); const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         const amt = parseInt(String(b.amount||0).toString().replace(/,/g,''),10) || 0;
@@ -810,7 +966,7 @@ function exportAll(fmt){
 
     // ===== Save & Re-render =====
     function saveData(){ saveAllThrottled(); renderAll(); }
-    function renderAll(){ renderLists(); renderSummary(); renderGoldDailySummary(); renderCoinDailySummary(); renderCashDailySummary(); renderBankDailySummary(); renderCombinedDailySummary(); renderSelectOptions(); }
+  function renderAll(){ renderLists(); renderSummary(); renderGoldDailySummary(); renderCoinDailySummary(); renderCashDailySummary(); renderBankDailySummary(); renderCombinedDailySummary(); renderSelectOptions(); renderCashEntriesList(); }
 
     // ===== Tabs =====
     const navItems = document.querySelectorAll('.nav-item'); const tabs = document.querySelectorAll('.tab-content');
@@ -883,13 +1039,42 @@ function exportAll(fmt){
     bindThousands(bankAmountInput);
 
     
-    document.getElementById('save-cash').addEventListener('click', ()=>{
+    // Add cash entry (multi-currency)
+    document.getElementById('add-cash-entry').addEventListener('click', ()=>{
       const raw = document.getElementById('cash-amount').value.replace(/,/g,'').trim();
+      const curSel = document.getElementById('cash-currency');
+      // ensure currency options exist and a category is selected in manage panel
+      const currenciesList = data.optionLists && data.optionLists.currencies;
+      if (!currenciesList || !Array.isArray(currenciesList) || currenciesList.length===0){
+        alert('ابتدا یک دسته گزینه را از پنل مدیریت انتخاب کنید');
+        return;
+      }
+      const cur = curSel ? curSel.value : (data.cashCurrency || currenciesList[0] || 'تومان');
       if (!isPosInt(raw)){ toast('مبلغ نامعتبر است'); return; }
-      data.cash = parseInt(raw,10);
-      data.cashDateISO = effectiveDateISO();
-      document.getElementById('cash-amount').value=''; saveData(); resetDateToTodayIfOverridden(); toast('نقدینگی ذخیره شد');
+      const amt = parseInt(raw,10);
+      data.cashEntries = data.cashEntries || [];
+      if (editing && editing.type === 'cash'){
+        // update existing
+        const idx = editing.index;
+        if (typeof idx === 'number' && data.cashEntries[idx]){
+          data.cashEntries[idx].currency = cur;
+          data.cashEntries[idx].amount = amt;
+          data.cashEntries[idx].dateISO = effectiveDateISO();
+          toast('تغییرات ذخیره شد');
+        }
+        editing = null;
+        document.getElementById('add-cash-entry').textContent = 'افزودن نقدینگی';
+      } else {
+        const entry = { currency: cur, amount: amt, dateISO: effectiveDateISO() };
+        data.cashEntries.push(entry);
+        toast('رکورد نقدی اضافه شد');
+      }
+      // keep legacy single cash for compatibility (sum of entries in default currency)
+      data.cash = data.cashEntries.reduce((s,e)=> s + (e.currency=== (data.cashCurrency||'تومان') ? Number(e.amount) : 0), 0);
+      data.cashDateISO = data.cashEntries.length ? data.cashEntries[data.cashEntries.length-1].dateISO : null;
+      document.getElementById('cash-amount').value=''; saveData(); renderCashEntriesList(); renderCashDailySummary(); renderSummary(); resetDateToTodayIfOverridden();
     });
+    // Note: edit/clear are available from the summary table inline buttons (summary-edit-cash, summary-clear-cash)
     document.getElementById('add-bank-card').addEventListener('click', ()=>{
       const name = document.getElementById('bank-name').value.trim();
       const number = document.getElementById('card-number').value.trim();
@@ -956,6 +1141,11 @@ function exportAll(fmt){
       data.currentDateISO = new Date().toISOString();
       renderSelectOptions();
       renderAll();
+      // If opened via file://, show helpful instruction banner
+      try{ if (window.location && window.location.protocol === 'file:'){
+        const b = document.getElementById('file-protocol-banner'); if (b) b.style.display='block';
+        const db = document.getElementById('dismiss-file-banner'); if (db) db.addEventListener('click', ()=> b.style.display='none');
+      }}catch(e){}
       const firstActive = document.querySelector('.tab-content.active');
       if (firstActive){ void firstActive.offsetWidth; firstActive.classList.add('anim-in'); }
     });
@@ -1028,9 +1218,15 @@ function exportAll(fmt){
 <script>
 (function(){
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('./service-worker.js', {scope: './'}).catch(function(e){console.warn(e)});
-    });
+    // Only register service worker when served over http(s) or localhost. Skip file:// (dev) to avoid errors.
+    const protocol = window.location.protocol;
+    if (protocol === 'http:' || protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./service-worker.js', {scope: './'}).catch(function(e){console.warn('SW register failed:', e)});
+      });
+    } else {
+      console.info('Service worker registration skipped (not running on http/https/localhost).');
+    }
   }
   var deferredPrompt=null, btn=document.getElementById('pwa-install');
   window.addEventListener('beforeinstallprompt', function(e){
