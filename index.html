@@ -425,12 +425,27 @@ function isValidJalali(jy, jm, jd){
 
     // ===== Option Lists & Panel =====
     function renderSelectOptions(){
+      // Populate selects using DOM APIs to avoid inserting HTML directly (prevents XSS)
+      function fillSelect(el, placeholder, items, labelFn){
+        if (!el) return;
+        el.innerHTML = '';
+        const ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = placeholder;
+        el.appendChild(ph);
+        (items || []).forEach(v => {
+          const o = document.createElement('option');
+          o.value = String(v);
+          o.textContent = labelFn ? labelFn(v) : String(v);
+          el.appendChild(o);
+        });
+      }
       const selK = document.getElementById('gold-karat');
-      selK.innerHTML = '<option value=\"\">انتخاب عیار</option>' + data.optionLists.karats.map(v=>`<option value=\"${v}\">${v} عیار</option>`).join('');
+      fillSelect(selK, 'انتخاب عیار', data.optionLists.karats, v => `${v} عیار`);
       const selC = document.getElementById('coin-type');
-      selC.innerHTML = '<option value=\"\">انتخاب نوع سکه</option>' + data.optionLists.coinTypes.map(v=>`<option value=\"${v}\">${v}</option>`).join('');
+      fillSelect(selC, 'انتخاب نوع سکه', data.optionLists.coinTypes);
       const selB = document.getElementById('bank-name');
-      selB.innerHTML = '<option value=\"\">انتخاب بانک</option>' + data.optionLists.bankNames.map(v=>`<option value=\"${v}\">${v}</option>`).join('');
+      fillSelect(selB, 'انتخاب بانک', data.optionLists.bankNames);
     }
 
     const overlay = document.getElementById('overlay');
@@ -787,69 +802,7 @@ function exportAll(fmt){
       renderCombinedDailySummary();
       const wrap = document.getElementById('combined-daily-summary-wrap');
       const table = wrap.querySelector('table'); if (!table) return;
-      const html = '\\uFEFF<html><head><meta charset=\"utf-8\" /></head><body>'+table.outerHTML+'<script>
-(function(){
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('./service-worker.js', {scope: './'}).catch(function(e){console.warn(e)});
-    });
-  }
-  var deferredPrompt=null, btn=document.getElementById('pwa-install');
-  window.addEventListener('beforeinstallprompt', function(e){
-    e.preventDefault(); deferredPrompt=e; if(btn) btn.classList.add('show');
-  });
-  if(btn) btn.addEventListener('click', async function(){
-    if(!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt=null; btn.classList.remove('show');
-  });
-  window.addEventListener('appinstalled', function(){ if(btn) btn.classList.remove('show'); });
-})();
-</script>
-
-<script>
-(function(){
-  var deferredPrompt=null;
-  var btn=document.getElementById('pwa-install');
-  var bar=document.getElementById('pwa-install-bar');
-  var accept=document.getElementById('pwa-install-accept');
-  var dismiss=document.getElementById('pwa-install-dismiss');
-
-  function showBar(){ if(bar) bar.style.display='block'; }
-  function hideBar(){ if(bar) bar.style.display='none'; }
-  function showBtn(){ if(btn) btn.classList.add('show'); }
-
-  // Android/desktop flow
-  window.addEventListener('beforeinstallprompt', function(e){
-    e.preventDefault(); deferredPrompt=e; showBtn(); showBar();
-  });
-
-  if(accept){
-    accept.addEventListener('click', async function(){
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt=null; hideBar();
-      if(btn) btn.classList.remove('show');
-    });
-  }
-  if(dismiss){ dismiss.addEventListener('click', hideBar); }
-
-  // iOS hint (no beforeinstallprompt)
-  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if(isIOS && !isStandalone){
-    // Show bar with a message suggesting Share -> Add to Home Screen
-    if(bar){
-      bar.querySelector('.title').textContent = 'برای نصب: دکمهٔ Share را زده و «Add to Home Screen» را انتخاب کنید';
-      showBar();
-    }
-  }
-})();
-</script>
-
-</body></html>';
+      const html = '\uFEFF' + '<html><head><meta charset="utf-8" /></head><body>' + table.outerHTML + '</body></html>';
       const blob = new Blob([html], {type:'application/vnd.ms-excel'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = 'combined-daily-summary.xls'; a.click(); URL.revokeObjectURL(url);
@@ -880,7 +833,7 @@ function exportAll(fmt){
       const karat = document.getElementById('gold-karat').value.trim();
       const weightRaw = document.getElementById('gold-weight').value.trim();
       if (!karat){ toast('عیار را انتخاب کنید'); return; }
-      if (!isPosDec(weightRaw)){ toast('وزن نامعتبر است'); return; }
+  if (!isPosDec(weightRaw)){ toast('وزن نامعتبر است'); return; }
       data.golds.push({ karat, weight: weightRaw, dateISO: effectiveDateISO() });
       document.getElementById('gold-weight').value=''; saveData(); resetDateToTodayIfOverridden(); toast('طلای جدید ثبت شد');
     });
