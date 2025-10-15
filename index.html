@@ -86,6 +86,57 @@
   #gregorian-equivalent{opacity:.85;font-size:.9rem;margin-left:8px}
   </style>
 
+  <style>
+    /* Modern summary styles */
+    .card h4{color:#e9c97a;margin-bottom:8px;font-size:1rem}
+    .summary-actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+    .summary-actions .btn{padding:8px 10px;border-radius:8px;font-weight:700}
+    /* modern table look */
+    .table{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:10px;overflow:hidden}
+    .table thead tr{background:rgba(255,255,255,0.03)}
+    .table th{color:#ffdca3;font-weight:800}
+    .table td{color:#fff;background:transparent}
+    .table tbody tr:nth-child(odd) td{background:rgba(255,255,255,0.02)}
+    /* subtle card elevation */
+    .card{transition:transform .12s ease, box-shadow .12s ease}
+    .card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.45)}
+    /* responsive tweaks */
+    @media (max-width:560px){
+      .summary-actions{justify-content:center}
+      .table th,.table td{font-size:.85rem;padding:6px}
+    }
+  </style>
+
+  <style>
+    /* Summary tile grid */
+    .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+    @media (max-width:900px){ .summary-grid{grid-template-columns:repeat(2,1fr);} }
+    @media (max-width:480px){ .summary-grid{grid-template-columns:1fr;} }
+    .summary-tile{background:linear-gradient(135deg, rgba(212,175,55,0.08), rgba(255,255,255,0.02));border-radius:12px;padding:12px;min-height:110px;display:flex;flex-direction:column;justify-content:space-between}
+    .summary-tile .tile-head{display:flex;align-items:center;gap:10px}
+    .summary-tile .tile-head .icon{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(255,255,255,0.04);font-size:20px}
+    .summary-tile h5{margin:0;color:#ffdca3}
+    .summary-tile .tile-body{margin-top:8px;flex:1}
+    .summary-tile .small{font-size:.85rem;opacity:.9}
+    .summary-tile ul{list-style:none;padding-left:0;margin:8px 0 0 0}
+    .summary-tile li{font-size:.92rem;padding:4px 0;border-bottom:1px dashed rgba(255,255,255,0.03)}
+    .summary-tile .stat{font-weight:800;color:#fff}
+  </style>
+
+  <style>
+    /* Combined daily summary cards */
+    .combined-cards{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+    .combined-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 6px 18px rgba(0,0,0,0.35);transition:transform .12s ease}
+    .combined-card:hover{transform:translateY(-6px)}
+    .combined-card .card-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .combined-card .card-head .title{font-weight:800;color:#ffdca3}
+    .combined-card .card-body{margin-top:10px;display:none}
+    .combined-card.expanded .card-body{display:block}
+    .combined-card .breakdown{display:flex;gap:12px;flex-wrap:wrap}
+    .combined-card .breakdown .chip{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:999px}
+    .combined-actions{display:flex;gap:8px;align-items:center}
+  </style>
+
 <style>
 @supports not ((-webkit-backdrop-filter: blur(5px)) or (backdrop-filter: blur(5px))) {
   .bottom-nav{ background:#161616; }
@@ -128,6 +179,18 @@
         <div id="gregorian-equivalent"></div>
       </div>
       <p id="date-error">تاریخ نامعتبر است</p>
+    </div>
+  </div>
+
+  <!-- Day Details Modal -->
+  <div id="day-modal" class="overlay" aria-hidden="true">
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="day-modal-title">
+      <h3 id="day-modal-title">جزئیات روز</h3>
+      <div id="day-modal-body"></div>
+      <div class="row">
+        <div class="flex-auto"></div>
+        <button class="btn btn-secondary" id="day-modal-close">بستن</button>
+      </div>
     </div>
   </div>
 
@@ -238,27 +301,28 @@
 
     <!-- SUMMARY -->
     <div id="summary-tab" class="tab-content">
-      <div class="card">
-        <h2 class="card-title">خلاصه موجودی</h2>
-        <div id="summary-content"><p class="empty-state">اطلاعاتی برای نمایش وجود ندارد</p></div>
+      <div class="card" aria-labelledby="summary-aria-title">
+        <h2 id="summary-aria-title" class="card-title">خلاصه موجودی</h2>
+        <div id="summary-content" role="region" aria-live="polite"><p class="empty-state">اطلاعاتی برای نمایش وجود ندارد</p></div>
       </div>
 
       <div class="card">
         <h3 class="card-title">خلاصهٔ روزانه ترکیبی</h3>
-        <div class="controls">
+        <div class="controls" aria-label="فیلترها">
           <label>از: <input id="combined-from" class="input" type="date"></label>
           <label>تا: <input id="combined-to" class="input" type="date"></label>
           <input id="combined-search" class="input" type="text" placeholder="جستجو (نوع سکه/نام بانک)">
           <button id="combined-apply" class="btn btn-secondary">اعمال فیلتر</button>
           <button id="combined-clear" class="btn btn-secondary">حذف فیلتر</button>
         </div>
-        <div class="btn-row">
+        <div class="btn-row summary-actions">
           <button id="export-combined-csv" class="btn btn-primary">خروجی CSV</button>
           <button id="export-combined-xls" class="btn btn-secondary">خروجی Excel</button>
           <button id="export-combined-json" class="btn btn-secondary">خروجی JSON</button>
           <button id="copy-combined-csv" class="btn btn-secondary">کپی CSV</button>
+          <button id="summary-copy-text" class="btn btn-secondary" title="کپی خلاصه به صورت متن">کپی خلاصه</button>
         </div>
-  <div id="combined-daily-summary-wrap" class="mt-10">
+        <div id="combined-daily-summary-wrap" class="mt-10" role="region" aria-live="polite">
           <p class="empty-state muted">هنوز داده‌ای برای خلاصه وجود ندارد</p>
         </div>
       </div>
@@ -721,21 +785,70 @@ function exportAll(fmt){
       }
     }
     function renderSummary(){
-      const summary = document.getElementById('summary-content');
-      const totalGoldWeight = data.golds.reduce((s,g)=> s + parseFloat(g.weight||0), 0);
-      const totalCoins = data.coins.reduce((s,c)=> s + parseInt(c.count||0), 0);
-      const totalBank = data.banks.reduce((s,b)=> s + parseInt(String(b.amount).replace(/,/g,'')||0), 0);
-  const totalCash = data.cash || 0;
-  // compute totals per currency from cashEntries
-  const cashTotalsByCurrency = (data.cashEntries || []).reduce((acc,e)=>{ acc[e.currency] = (acc[e.currency]||0) + Number(e.amount); return acc; }, {});
+      const summary = document.getElementById('summary-content'); if (!summary) return;
+      const golds = Array.isArray(data.golds) ? data.golds : [];
+      const coins = Array.isArray(data.coins) ? data.coins : [];
+      const banks = Array.isArray(data.banks) ? data.banks : [];
+      const cashEntries = Array.isArray(data.cashEntries) ? data.cashEntries : [];
+
+      const totalGoldWeight = golds.reduce((s,g)=> s + (parseFloat(g.weight||0)||0), 0);
+      const goldByKarat = golds.reduce((acc,g)=>{ const k=String(g.karat||'نامشخص'); acc[k]=(acc[k]||0)+ (parseFloat(g.weight||0)||0); return acc; }, {});
+
+      const totalCoins = coins.reduce((s,c)=> s + (parseInt(c.count||0,10)||0), 0);
+      const coinsByType = coins.reduce((acc,c)=>{ const t=c.type||'نامشخص'; acc[t]=(acc[t]||0)+ (parseInt(c.count||0,10)||0); return acc; }, {});
+
+      const totalBank = banks.reduce((s,b)=> s + (parseInt(String(b.amount||0).replace(/,/g,''),10)||0), 0);
+      const bankByName = banks.reduce((acc,b)=>{ const n=b.name||'نامشخص'; acc[n]=(acc[n]||0)+ (parseInt(String(b.amount||0).replace(/,/g,''),10)||0); return acc; }, {});
+
+      const cashTotalsByCurrency = cashEntries.reduce((acc,e)=>{ const cur=e.currency||'تومان'; acc[cur]=(acc[cur]||0)+ Number(e.amount||0); return acc; }, {});
+
+      // Header
       const now = new Date(); const j = gregorianToJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
-      summary.innerHTML = (totalGoldWeight || totalCoins || totalBank || totalCash) ? `
-        <p>تاریخ نمایش: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</p>
-        <p>مجموع وزن طلا: ${totalGoldWeight.toFixed(3)} گرم</p>
-        <p>مجموع سکه‌ها: ${totalCoins} عدد</p>
-  <p>نقدینگی: ${Object.entries(cashTotalsByCurrency).length ? Object.entries(cashTotalsByCurrency).map(([cur,amt])=> `${Number(amt).toLocaleString()} ${esc(cur)}`).join(' | ') : (+totalCash).toLocaleString() + ' ریال'} ${data.cashDateISO? '(ثبت: '+(function(){const d=new Date(data.cashDateISO);const jj=gregorianToJalali(d.getFullYear(),d.getMonth()+1,d.getDate());return jj.jy+'/'+String(jj.jm).padStart(2,'0')+'/'+String(jj.jd).padStart(2,'0');})()+')':''}</p>
-        <p>مجموع موجودی بانک: ${totalBank.toLocaleString()} ریال</p>
-      ` : '<p class="empty-state">اطلاعاتی برای نمایش وجود ندارد</p>';
+      const header = document.createElement('div'); header.className='summary-header'; header.innerHTML = `<div style="font-weight:800;color:#ffdca3">تاریخ نمایش: ${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}</div>`;
+
+      // Grid
+      const grid = document.createElement('div'); grid.className = 'summary-grid';
+
+      // Tile helper
+      function makeTile(icon, title, mainStat, items){
+        const t = document.createElement('div'); t.className='summary-tile';
+        const head = document.createElement('div'); head.className='tile-head';
+        const ic = document.createElement('div'); ic.className='icon'; ic.textContent = icon;
+        const h = document.createElement('div'); const hh = document.createElement('h5'); hh.textContent = title; h.appendChild(hh);
+        head.appendChild(ic); head.appendChild(h);
+        const body = document.createElement('div'); body.className='tile-body';
+        const stat = document.createElement('div'); stat.className='stat'; stat.textContent = mainStat; body.appendChild(stat);
+        if (items && items.length){ const ul = document.createElement('ul'); items.forEach(it=>{ const li=document.createElement('li'); li.textContent = it; ul.appendChild(li); }); body.appendChild(ul); }
+        t.appendChild(head); t.appendChild(body); return t;
+      }
+
+      // Gold tile
+      const goldItems = Object.entries(goldByKarat).sort((a,b)=> parseFloat(b[0]||0) - parseFloat(a[0]||0)).map(([k,w])=> `${k} عیار: ${Number(w).toFixed(3)} گ`);
+      grid.appendChild(makeTile('🥇','طلا', `${totalGoldWeight.toFixed(3)} گرم`, goldItems.slice(0,5)));
+
+      // Coins tile
+      const coinItems = Object.entries(coinsByType).sort((a,b)=> b[1]-a[1]).map(([t,cnt])=> `${t}: ${cnt} عدد`);
+      grid.appendChild(makeTile('🪙','سکه', `${totalCoins} عدد`, coinItems.slice(0,5)));
+
+      // Cash tile
+      const cashItems = Object.entries(cashTotalsByCurrency).map(([cur,amt])=> `${Number(amt).toLocaleString()} ${esc(cur)}`);
+      if (!cashItems.length) cashItems.push(`${Number(data.cash||0).toLocaleString()} ریال`);
+      grid.appendChild(makeTile('💵','نقدینگی', cashItems.join(' | '), cashItems.slice(0,5)));
+
+      // Bank tile
+      const bankItems = Object.entries(bankByName).sort((a,b)=> b[1]-a[1]).map(([n,amt])=> `${n}: ${Number(amt).toLocaleString()} ریال`);
+      grid.appendChild(makeTile('🏦','بانک', `${totalBank.toLocaleString()} ریال`, bankItems.slice(0,5)));
+
+      // Actions (reuse summary-actions area)
+      const actionsRow = document.querySelector('.summary-actions');
+      if (actionsRow && !actionsRow.dataset.hooked){
+        actionsRow.dataset.hooked = '1';
+        const exportBtn = document.getElementById('export-combined-csv'); if (exportBtn){ exportBtn.addEventListener('click', ()=>{ const rows=buildCombinedDailyRows(); const csv=combinedRowsToCSV(rows); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`combined-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url); }); }
+        const copyBtn = document.getElementById('copy-combined-csv'); if (copyBtn){ copyBtn.addEventListener('click', async ()=>{ try{ const rows=buildCombinedDailyRows(); const csv=combinedRowsToCSV(rows); await navigator.clipboard.writeText(csv); toast('CSV کپی شد'); }catch(e){ toast('کپی ناموفق'); } }); }
+        const copySummaryText = document.getElementById('summary-copy-text'); if (copySummaryText){ copySummaryText.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(grid.innerText || grid.textContent || ''); toast('خلاصه کپی شد'); }catch(e){ toast('کپی ناموفق'); } }); }
+      }
+
+      summary.innerHTML = ''; summary.appendChild(header); summary.appendChild(grid);
     }
     function renderGoldDailySummary(){
       const wrap = document.getElementById('gold-daily-summary-wrap'); if (!wrap) return;
@@ -991,30 +1104,66 @@ function exportAll(fmt){
       });
       if (!filtered.length){ wrap.innerHTML = '<p class="empty-state muted">موردی مطابق فیلترها یافت نشد</p>'; return; }
 
-      // Build table using DOM APIs to reduce innerHTML parsing overhead
-      const table = document.createElement('table'); table.className = 'table';
-      const thead = document.createElement('thead');
-      thead.innerHTML = '<tr><th>تاریخ</th><th>تعداد طلا</th><th>مجموع وزن طلا (گرم)</th><th>جمع سکه‌ها</th><th>تفکیک سکه</th><th>نقدی (ریال)</th><th>مجموع بانک (ریال)</th></tr>';
-      table.appendChild(thead);
-      const tbody = document.createElement('tbody');
-      filtered.forEach(r=>{
+  // pagination
+  window._combinedPage = window._combinedPage || 1;
+  window._combinedPageSize = window._combinedPageSize || 7;
+  const total = filtered.length;
+  const page = Math.max(1, Math.min(window._combinedPage, Math.ceil(total / window._combinedPageSize) || 1));
+  const pageSize = window._combinedPageSize;
+  const start = (page-1)*pageSize; const end = start + pageSize;
+  const pageRows = filtered.slice(start, end);
+
+  // header with pager
+  const headerWrap = document.createElement('div'); headerWrap.style.display='flex'; headerWrap.style.justifyContent='space-between'; headerWrap.style.alignItems='center';
+  const info = document.createElement('div'); info.textContent = `نمایش ${Math.min(total, pageSize)} از ${total} روز (صفحه ${page} از ${Math.max(1, Math.ceil(total/pageSize))})`;
+  headerWrap.appendChild(info);
+  const pager = document.createElement('div'); pager.className='summary-actions';
+  const prev = document.createElement('button'); prev.className='btn btn-secondary'; prev.textContent='◀ قبلی';
+  const next = document.createElement('button'); next.className='btn btn-secondary'; next.textContent='بعدی ▶';
+  prev.disabled = page<=1; next.disabled = end>=total;
+  prev.addEventListener('click', ()=>{ window._combinedPage = Math.max(1, page-1); renderCombinedDailySummary(); });
+  next.addEventListener('click', ()=>{ window._combinedPage = Math.min(Math.ceil(total/pageSize), page+1); renderCombinedDailySummary(); });
+  pager.appendChild(prev); pager.appendChild(next); headerWrap.appendChild(pager);
+
+  const container = document.createElement('div'); container.className = 'combined-cards';
+
+  pageRows.forEach(r=>{
         const j = gregorianToJalali(r.dd.getFullYear(), r.dd.getMonth()+1, r.dd.getDate());
         const dateFa = `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
-        const coinBreakdown = Object.entries(r.coinTypes).map(([t,c])=> `${t}: ${c}`).join(' | ');
-        const tr = document.createElement('tr');
-        function td(txt){ const c = document.createElement('td'); c.textContent = txt; return c; }
-        tr.appendChild(td(dateFa));
-        tr.appendChild(td(r.goldCount));
-        tr.appendChild(td(r.goldWeight.toFixed(3)));
-        tr.appendChild(td(r.coinTotal));
-        tr.appendChild(td(coinBreakdown || '-'));
-        tr.appendChild(td(r.cash? r.cash.toLocaleString(): ''));
-        tr.appendChild(td(r.bankTotal? r.bankTotal.toLocaleString(): ''));
-        tbody.appendChild(tr);
+  const card = document.createElement('div'); card.className = 'combined-card';
+        const head = document.createElement('div'); head.className = 'card-head';
+        const title = document.createElement('div'); title.className='title'; title.textContent = dateFa;
+        const totals = document.createElement('div'); totals.className='small'; totals.innerHTML = `<strong>${r.goldCount}</strong> طلا — <strong>${r.coinTotal}</strong> سکه — <strong>${r.bankTotal? r.bankTotal.toLocaleString() : 0}</strong> ریال`;
+        head.appendChild(title); head.appendChild(totals);
+
+        const body = document.createElement('div'); body.className='card-body';
+        const breakdown = document.createElement('div'); breakdown.className='breakdown';
+        // coin types chips
+        Object.entries(r.coinTypes || {}).forEach(([t,c])=>{ const sp=document.createElement('span'); sp.className='chip'; sp.textContent = `${t}: ${c}`; breakdown.appendChild(sp); });
+        // gold summary
+        const goldSummary = document.createElement('div'); goldSummary.className='chip'; goldSummary.textContent = `طلا: ${r.goldWeight.toFixed(3)} گرم (${r.goldCount})`;
+        breakdown.appendChild(goldSummary);
+        // bank
+        const bankSummary = document.createElement('div'); bankSummary.className='chip'; bankSummary.textContent = `بانک: ${r.bankTotal? r.bankTotal.toLocaleString() : 0} ریال`;
+        breakdown.appendChild(bankSummary);
+        // cash (note: combined rows don't include cash by design)
+        body.appendChild(breakdown);
+
+        // actions
+        const actions = document.createElement('div'); actions.className='combined-actions';
+  const expandBtn = document.createElement('button'); expandBtn.className='btn btn-secondary'; expandBtn.textContent = 'جزئیات';
+  expandBtn.addEventListener('click', ()=>{ openDayModal(r.key); });
+        const exportBtn = document.createElement('button'); exportBtn.className='btn btn-primary'; exportBtn.textContent = 'خروجی CSV';
+        exportBtn.addEventListener('click', ()=>{ const csv = combinedRowsToCSV([r]); const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`combined-${dateFa}.csv`; a.click(); URL.revokeObjectURL(url); });
+  actions.appendChild(expandBtn); actions.appendChild(exportBtn);
+        body.appendChild(actions);
+
+        card.appendChild(head); card.appendChild(body);
+        container.appendChild(card);
       });
-      table.appendChild(tbody);
       wrap.innerHTML = '';
-      wrap.appendChild(table);
+      wrap.appendChild(headerWrap);
+      wrap.appendChild(container);
     }
     function combinedRowsToCSV(rows){
       const header = ['date','gold_count','gold_weight_gram','coins_total','coins_breakdown','cash_rial','bank_total_rial'];
@@ -1053,6 +1202,80 @@ function exportAll(fmt){
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = 'combined-daily-summary.xls'; a.click(); URL.revokeObjectURL(url);
     }
+
+    // ===== Day modal for combined daily details =====
+    function openDayModal(isoDateKey){
+      const overlay = document.getElementById('day-modal');
+      if (!overlay) return;
+      overlay.classList.add('show'); overlay.setAttribute('aria-hidden','false');
+      renderDayModal(isoDateKey);
+    }
+    function closeDayModal(){ const overlay = document.getElementById('day-modal'); if (!overlay) return; overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); document.getElementById('day-modal-body').innerHTML=''; }
+
+    function renderDayModal(isoDateKey){
+      const body = document.getElementById('day-modal-body'); if (!body) return; body.innerHTML='';
+      // find all items matching date prefix
+      const items = [];
+      (data.golds || []).forEach((g, i)=>{ if (g.dateISO && g.dateISO.startsWith(isoDateKey)) items.push({kind:'gold',index:i, data:g}); });
+      (data.coins || []).forEach((c, i)=>{ if (c.dateISO && c.dateISO.startsWith(isoDateKey)) items.push({kind:'coin',index:i, data:c}); });
+      (data.banks || []).forEach((b, i)=>{ if (b.dateISO && b.dateISO.startsWith(isoDateKey)) items.push({kind:'bank',index:i, data:b}); });
+      (data.cashEntries || []).forEach((e, i)=>{ if (e.dateISO && e.dateISO.startsWith(isoDateKey)) items.push({kind:'cash',index:i, data:e}); });
+
+      if (!items.length){ body.innerHTML = '<p class="empty-state">هیچ رکوردی برای این تاریخ وجود ندارد</p>'; return; }
+
+      items.forEach((it, idx)=>{
+        const wrap = document.createElement('div'); wrap.className='card'; wrap.style.marginBottom='8px';
+        const title = document.createElement('div'); title.className='card-title'; title.textContent = `${idx+1}. ${it.kind}`;
+        wrap.appendChild(title);
+        const form = document.createElement('div'); form.className='form-group';
+        if (it.kind === 'gold'){
+          form.innerHTML = `<label class="form-label">عیار</label><input class="form-input" data-kind="gold" data-idx="${it.index}" data-field="karat" value="${esc(it.data.karat||'')}">`+
+                          `<label class="form-label">وزن (گرم)</label><input class="form-input" data-kind="gold" data-idx="${it.index}" data-field="weight" value="${esc(it.data.weight||'')}">`;
+        } else if (it.kind === 'coin'){
+          form.innerHTML = `<label class="form-label">نوع</label><input class="form-input" data-kind="coin" data-idx="${it.index}" data-field="type" value="${esc(it.data.type||'')}">`+
+                          `<label class="form-label">تعداد</label><input class="form-input" data-kind="coin" data-idx="${it.index}" data-field="count" value="${esc(it.data.count||'')}">`;
+        } else if (it.kind === 'bank'){
+          form.innerHTML = `<label class="form-label">نام بانک</label><input class="form-input" data-kind="bank" data-idx="${it.index}" data-field="name" value="${esc(it.data.name||'')}">`+
+                          `<label class="form-label">شماره کارت</label><input class="form-input" data-kind="bank" data-idx="${it.index}" data-field="number" value="${esc(it.data.number||'')}">`+
+                          `<label class="form-label">مبلغ (ریال)</label><input class="form-input" data-kind="bank" data-idx="${it.index}" data-field="amount" value="${esc(it.data.amount||'')}">`;
+        } else if (it.kind === 'cash'){
+          form.innerHTML = `<label class="form-label">واحد</label><input class="form-input" data-kind="cash" data-idx="${it.index}" data-field="currency" value="${esc(it.data.currency||'')}">`+
+                          `<label class="form-label">مبلغ</label><input class="form-input" data-kind="cash" data-idx="${it.index}" data-field="amount" value="${esc(it.data.amount||'')}">`;
+        }
+        wrap.appendChild(form);
+        const rowActions = document.createElement('div'); rowActions.style.display='flex'; rowActions.style.gap='8px'; rowActions.style.marginTop='8px';
+        const saveBtn = document.createElement('button'); saveBtn.className='btn btn-primary'; saveBtn.textContent='ذخیره';
+        saveBtn.addEventListener('click', ()=>{
+          // collect inputs inside form
+          const inputs = form.querySelectorAll('input[data-kind]');
+          inputs.forEach(inp=>{
+            const k = inp.dataset.kind; const i = +inp.dataset.idx; const f = inp.dataset.field; const v = inp.value.trim();
+            if (k==='gold'){ if (data.golds[i]) data.golds[i][f] = v; }
+            if (k==='coin'){ if (data.coins[i]) data.coins[i][f] = v; }
+            if (k==='bank'){ if (data.banks[i]) data.banks[i][f] = v; }
+            if (k==='cash'){ if (data.cashEntries[i]) data.cashEntries[i][f] = v; }
+          });
+          saveData(); renderCombinedDailySummary(); renderAll(); toast('تغییرات ذخیره شد');
+        });
+        const delBtn = document.createElement('button'); delBtn.className='btn btn-secondary'; delBtn.textContent='حذف';
+        delBtn.addEventListener('click', ()=>{
+          if (!confirm('آیا از حذف این رکورد مطمئن هستید؟')) return;
+          const k = it.kind; const idx = it.index;
+          if (k==='gold') data.golds.splice(idx,1);
+          if (k==='coin') data.coins.splice(idx,1);
+          if (k==='bank') data.banks.splice(idx,1);
+          if (k==='cash') data.cashEntries.splice(idx,1);
+          saveData(); renderCombinedDailySummary(); renderAll(); renderDayModal(isoDateKey); toast('رکورد حذف شد');
+        });
+        rowActions.appendChild(saveBtn); rowActions.appendChild(delBtn);
+        wrap.appendChild(rowActions);
+        body.appendChild(wrap);
+      });
+    }
+
+    // wire modal close
+    document.getElementById('day-modal-close')?.addEventListener('click', ()=> closeDayModal());
+    document.getElementById('day-modal')?.addEventListener('click', (e)=>{ if (e.target && e.target.id==='day-modal') closeDayModal(); });
 
     // ===== Save & Re-render =====
     function saveData(){
