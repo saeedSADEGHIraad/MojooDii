@@ -80,6 +80,10 @@
     .chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
     .chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:6px 10px;border-radius:999px;cursor:pointer}
     .chip.active{background:#d4af37;color:#111;border-color:#d4af37}
+  /* date controls */
+  .date-controls{margin-top:8px;display:flex;gap:8px;align-items:center}
+  .date-controls .group{display:flex;gap:6px}
+  #gregorian-equivalent{opacity:.85;font-size:.9rem;margin-left:8px}
   </style>
 
 <style>
@@ -114,6 +118,14 @@
         <input class="seg" id="jalali-month" placeholder="ماه" inputmode="numeric" />
         <span class="sep">/</span>
         <input class="seg" id="jalali-day" placeholder="روز" inputmode="numeric" />
+      </div>
+      <div class="date-controls">
+        <div class="group">
+          <button id="date-prev" class="btn btn-secondary" title="یک روز قبل">◀</button>
+          <button id="date-today" class="btn btn-primary" title="امروز">امروز</button>
+          <button id="date-next" class="btn btn-secondary" title="یک روز بعد">▶</button>
+        </div>
+        <div id="gregorian-equivalent"></div>
       </div>
       <p id="date-error">تاریخ نامعتبر است</p>
     </div>
@@ -305,8 +317,11 @@
         bankNames: ['ملی','ملت','صادرات','پارسیان','تجارت','رفاه','سامان'],
         currencies: ['تومان']
       },
-      cashCurrency: 'تومان'
+      cashCurrency: 'تومان',
+      _version: 1
     };
+    // ensure version exists for older data
+    if (!data._version) data._version = 1;
     // migrate legacy single cash value into cashEntries for backward compatibility
     if (data.cash && (!data.cashEntries || !data.cashEntries.length)){
       const iso = data.cashDateISO || new Date().toISOString();
@@ -451,6 +466,51 @@ function isValidJalali(jy, jm, jd){
       if (!inputsEqualToday()) { setInputsToToday(); toast('تاریخ به امروز بازگردانده شد'); }
     }
 
+    // ===== Date controls UX enhancements =====
+    (function(){
+      const prevBtn = document.getElementById('date-prev');
+      const todayBtn = document.getElementById('date-today');
+      const nextBtn = document.getElementById('date-next');
+      const gregEl = document.getElementById('gregorian-equivalent');
+
+      function updateGregorianDisplay(){
+        const {jy,jm,jd} = jalaliInputs();
+        if (!isValidJalali(jy,jm,jd)){ gregEl.textContent=''; return; }
+        const g = jalaliToGregorian(jy,jm,jd);
+        gregEl.textContent = `معادل میلادی: ${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')}`;
+      }
+
+      function setJalaliFromDate(date){
+        const j = gregorianToJalali(date.getFullYear(), date.getMonth()+1, date.getDate());
+        yEl.value = j.jy; mEl.value = String(j.jm).padStart(2,'0'); dEl.value = String(j.jd).padStart(2,'0');
+        updateGregorianDisplay();
+      }
+
+      function changeByDays(delta){
+        const curISO = jalaliInputsToISO() || new Date().toISOString();
+        const d = new Date(curISO);
+        d.setDate(d.getDate() + delta);
+        setJalaliFromDate(d);
+      }
+
+      if (prevBtn) prevBtn.addEventListener('click', ()=>{ changeByDays(-1); });
+      if (nextBtn) nextBtn.addEventListener('click', ()=>{ changeByDays(1); });
+      if (todayBtn) todayBtn.addEventListener('click', ()=>{ setInputsToToday(); updateGregorianDisplay(); });
+
+      // numeric-only enforcement + auto-pad on blur for month/day
+      [yEl,mEl,dEl].forEach(el=>{
+        if(!el) return;
+        el.addEventListener('input', ()=>{ el.value = String(el.value).replace(/[^0-9]/g,''); });
+        el.addEventListener('blur', ()=>{
+          if (el === mEl || el === dEl){ if (el.value) el.value = String(el.value).padStart(2,'0'); }
+          updateGregorianDisplay();
+        });
+      });
+
+      // initial display
+      try{ updateGregorianDisplay(); }catch(e){}
+    })();
+
     // ===== Option Lists & Panel =====
     function renderSelectOptions(){
       // Populate selects using DOM APIs to avoid inserting HTML directly (prevents XSS)
@@ -513,7 +573,7 @@ function isValidJalali(jy, jm, jd){
       if (!val) return;
       const list = data.optionLists[currentListKey];
       if (!list){ alert('ابتدا یک دسته گزینه را از پنل مدیریت انتخاب کنید'); return; }
-      if (!list.includes(val)){ list.push(val); chipInput.value=''; saveAll(); renderChips(); renderSelectOptions(); toast('گزینه اضافه شد'); }
+  if (!list.includes(val)){ list.push(val); chipInput.value=''; saveData(); renderChips(); renderSelectOptions(); toast('گزینه اضافه شد'); }
     });
   // manage currencies button
   const manageCurrenciesBtn = document.getElementById('manage-currencies');
@@ -528,14 +588,14 @@ function isValidJalali(jy, jm, jd){
       if (currentListKey==='karats'){ data.golds.forEach(g=>{ if (String(g.karat)===String(selectedValue)) g.karat = String(val); }); }
       if (currentListKey==='coinTypes'){ data.coins.forEach(c=>{ if (c.type===selectedValue) c.type = val; }); }
       if (currentListKey==='bankNames'){ data.banks.forEach(b=>{ if (b.name===selectedValue) b.name = val; }); }
-      selectedValue = val; saveAll(); renderChips(); renderSelectOptions(); renderAll(); toast('گزینه ویرایش شد');
+  selectedValue = val; saveData(); renderChips(); renderSelectOptions(); renderAll(); toast('گزینه ویرایش شد');
     });
     document.getElementById('delete-chip').addEventListener('click', ()=>{
       if (!selectedValue){ alert('ابتدا یک گزینه را انتخاب کنید'); return; }
       if (!confirm('حذف این گزینه؟ داده‌های ثبت‌شده تغییری نمی‌کند.')) return;
       const list = data.optionLists[currentListKey];
-      const idx = list.indexOf(selectedValue); if (idx>=0) list.splice(idx,1);
-      selectedValue = null; saveAll(); renderChips(); renderSelectOptions(); toast('گزینه حذف شد');
+  const idx = list.indexOf(selectedValue); if (idx>=0) list.splice(idx,1);
+  selectedValue = null; saveData(); renderChips(); renderSelectOptions(); toast('گزینه حذف شد');
     });
     document.getElementById('close-panel').addEventListener('click', ()=> overlay.classList.remove('show'));
     overlay.addEventListener('click', (e)=>{ if (e.target===overlay) overlay.classList.remove('show'); });
@@ -809,23 +869,31 @@ function exportAll(fmt){
     }
     function renderCashDailySummary(){
       const wrap = document.getElementById('cash-daily-summary-wrap'); if (!wrap) return;
-      const cash = parseInt(data.cash||0,10) || 0; const iso = data.cashDateISO || null;
-      if (!cash || !iso){ wrap.innerHTML = '<p class="empty-state muted">هنوز داده‌ای برای خلاصه وجود ندارد</p>'; return; }
-      const d = new Date(iso); const j = gregorianToJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
-      const dateFa = `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
-      let html = '<table class="table"><thead><tr><th>تاریخ</th><th>مبلغ نقدی (ریال)</th><th>عملیات</th></tr></thead><tbody>';
-      html += `<tr><td>${dateFa}</td><td>${cash.toLocaleString()}</td><td><button class="btn btn-secondary" id="summary-edit-cash">ویرایش</button> <button class="btn btn-secondary" id="summary-clear-cash">پاک‌سازی</button></td></tr></tbody></table>`;
-      wrap.innerHTML = html;
-      // Attach handlers for inline buttons
-      const sEdit = document.getElementById('summary-edit-cash');
-      if (sEdit) sEdit.addEventListener('click', ()=>{
-        const inp = document.getElementById('cash-amount'); if (!inp) return; inp.focus(); inp.value = (data.cash||0).toLocaleString();
+      const entries = (data.cashEntries || []).slice().sort((a,b)=> new Date(b.dateISO) - new Date(a.dateISO));
+      if (!entries.length){ wrap.innerHTML = '<p class="empty-state muted">هنوز داده‌ای برای خلاصه وجود ندارد</p>'; return; }
+      // group by date -> currency -> total
+      const groups = {};
+      entries.forEach(e=>{
+        const d = new Date(e.dateISO); const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (!groups[key]) groups[key] = { currencies: {}, total: 0 };
+        groups[key].currencies[e.currency] = (groups[key].currencies[e.currency]||0) + Number(e.amount);
+        groups[key].total += Number(e.amount);
       });
-      const sClear = document.getElementById('summary-clear-cash');
-      if (sClear) sClear.addEventListener('click', ()=>{
-        if (!confirm('آیا از حذف مقدار نقدی ذخیره‌شده اطمینان دارید؟')) return;
-        data.cash = 0; data.cashDateISO = null; saveData(); renderCashDailySummary(); toast('نقدینگی پاک شد');
+      const rows = Object.entries(groups).sort((a,b)=> new Date(b[0]) - new Date(a[0]));
+      let html = '<table class="table"><thead><tr><th>تاریخ</th><th>واحد</th><th>مبلغ</th><th>عملیات</th></tr></thead><tbody>';
+      rows.forEach(([iso, v])=>{
+        const dd = new Date(iso); const j = gregorianToJalali(dd.getFullYear(), dd.getMonth()+1, dd.getDate());
+        const dateFa = `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
+        const curEntries = Object.entries(v.currencies);
+        curEntries.forEach(([cur, amt], idx)=>{
+          html += `<tr data-date="${iso}"><td>${idx===0? dateFa : ''}</td><td>${esc(cur)}</td><td>${Number(amt).toLocaleString()}</td><td>${idx===0? `<button class="btn btn-secondary summary-action-clear" data-type="cash" data-date="${iso}">پاک‌سازی</button>` : ''}</td></tr>`;
+        });
       });
+      html += '</tbody></table>'; wrap.innerHTML = html;
+      wrap.querySelectorAll('.summary-action-clear').forEach(b=> b.addEventListener('click', ()=>{
+        const date = b.dataset.date; if (!confirm('آیا از حذف تمام رکوردهای این تاریخ برای نقدینگی اطمینان دارید؟')) return;
+        data.cashEntries = data.cashEntries.filter(e=> !e.dateISO || !e.dateISO.startsWith(date)); saveData(); renderCashEntriesList(); renderCashDailySummary(); renderSummary(); toast('رکوردهای نقدی برای آن تاریخ حذف شدند');
+      }));
     }
     function renderBankDailySummary(){
       const wrap = document.getElementById('bank-daily-summary-wrap'); if (!wrap) return;
@@ -867,7 +935,11 @@ function exportAll(fmt){
     }
 
     // ===== Combined Daily Summary =====
+    // Simple cache for combined rows to avoid recomputing when data hasn't changed
+    let _cachedCombinedRows = null;
+    let _cachedCombinedVersion = null;
     function buildCombinedDailyRows(){
+      if (_cachedCombinedRows && _cachedCombinedVersion === data._version) return _cachedCombinedRows;
       const golds = Array.isArray(data.golds) ? data.golds : [];
       const coins = Array.isArray(data.coins) ? data.coins : [];
       const banks = Array.isArray(data.banks) ? data.banks : [];
@@ -893,6 +965,8 @@ function exportAll(fmt){
         map[key].bankTotal += amt;
       });
       const rows = Object.entries(map).map(([key,v])=>{ const dd=new Date(key); return {key,dd,...v}; }).sort((a,b)=> b.dd - a.dd);
+      _cachedCombinedRows = rows;
+      _cachedCombinedVersion = data._version;
       return rows;
     }
     function renderCombinedDailySummary(){
@@ -917,14 +991,30 @@ function exportAll(fmt){
       });
       if (!filtered.length){ wrap.innerHTML = '<p class="empty-state muted">موردی مطابق فیلترها یافت نشد</p>'; return; }
 
-      let html = '<table class="table"><thead><tr><th>تاریخ</th><th>تعداد طلا</th><th>مجموع وزن طلا (گرم)</th><th>جمع سکه‌ها</th><th>تفکیک سکه</th><th>نقدی (ریال)</th><th>مجموع بانک (ریال)</th></tr></thead><tbody>';
+      // Build table using DOM APIs to reduce innerHTML parsing overhead
+      const table = document.createElement('table'); table.className = 'table';
+      const thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>تاریخ</th><th>تعداد طلا</th><th>مجموع وزن طلا (گرم)</th><th>جمع سکه‌ها</th><th>تفکیک سکه</th><th>نقدی (ریال)</th><th>مجموع بانک (ریال)</th></tr>';
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
       filtered.forEach(r=>{
         const j = gregorianToJalali(r.dd.getFullYear(), r.dd.getMonth()+1, r.dd.getDate());
         const dateFa = `${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
         const coinBreakdown = Object.entries(r.coinTypes).map(([t,c])=> `${t}: ${c}`).join(' | ');
-        html += `<tr><td>${dateFa}</td><td>${r.goldCount}</td><td>${r.goldWeight.toFixed(3)}</td><td>${r.coinTotal}</td><td>${coinBreakdown||'-'}</td><td>${r.cash? r.cash.toLocaleString(): ''}</td><td>${r.bankTotal? r.bankTotal.toLocaleString(): ''}</td></tr>`;
+        const tr = document.createElement('tr');
+        function td(txt){ const c = document.createElement('td'); c.textContent = txt; return c; }
+        tr.appendChild(td(dateFa));
+        tr.appendChild(td(r.goldCount));
+        tr.appendChild(td(r.goldWeight.toFixed(3)));
+        tr.appendChild(td(r.coinTotal));
+        tr.appendChild(td(coinBreakdown || '-'));
+        tr.appendChild(td(r.cash? r.cash.toLocaleString(): ''));
+        tr.appendChild(td(r.bankTotal? r.bankTotal.toLocaleString(): ''));
+        tbody.appendChild(tr);
       });
-      html += '</tbody></table>'; wrap.innerHTML = html;
+      table.appendChild(tbody);
+      wrap.innerHTML = '';
+      wrap.appendChild(table);
     }
     function combinedRowsToCSV(rows){
       const header = ['date','gold_count','gold_weight_gram','coins_total','coins_breakdown','cash_rial','bank_total_rial'];
@@ -965,7 +1055,11 @@ function exportAll(fmt){
     }
 
     // ===== Save & Re-render =====
-    function saveData(){ saveAllThrottled(); renderAll(); }
+    function saveData(){
+      // bump version to invalidate caches
+      data._version = (data._version || 0) + 1;
+      saveAllThrottled(); renderAll();
+    }
   function renderAll(){ renderLists(); renderSummary(); renderGoldDailySummary(); renderCoinDailySummary(); renderCashDailySummary(); renderBankDailySummary(); renderCombinedDailySummary(); renderSelectOptions(); renderCashEntriesList(); }
 
     // ===== Tabs =====
