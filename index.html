@@ -137,11 +137,88 @@
     .combined-actions{display:flex;gap:8px;align-items:center}
   </style>
 
+  <!-- Mobile optimizations -->
+  <style>
+    /* Make header wrap on small screens and increase tap targets */
+    @media (max-width:640px){
+      .header{padding:12px;gap:8px;flex-wrap:wrap}
+      .title{font-size:1rem;flex:1;white-space:normal}
+      #seg-date{width:100%;margin-top:6px}
+      #seg-date .seg-wrap{width:100%;justify-content:flex-start}
+      .container{padding:12px;max-width:100%;}
+      .select-row{flex-direction:column;align-items:stretch}
+      .btn{padding:12px 14px;border-radius:12px}
+      .btn-icon{width:48px;height:48px}
+      .form-input,.form-select{padding:12px;font-size:16px}
+      .card{padding:12px;border-radius:12px}
+      .bottom-nav{padding:12px 0;height:72px}
+      .nav-item{font-size:.95rem}
+      .nav-item span{font-size:20px}
+      .nav-item small{font-size:.72rem}
+      /* make panels feel like bottom sheets */
+      .overlay{align-items:flex-end}
+      .panel{width:100%;max-width:100%;border-top-left-radius:14px;border-top-right-radius:14px;padding:14px;max-height:84vh;overflow:auto}
+      /* modal bodies scroll comfortably */
+      .panel .row{flex-direction:row;gap:8px}
+      /* combined cards adjustments */
+      .combined-card{padding:10px}
+      .summary-tile{padding:10px;min-height:100px}
+      .summary-grid{gap:10px}
+      /* combined modal card inside day modal */
+      #day-modal .panel{padding:12px}
+      /* make inputs and chips easier to tap */
+      .chip, .chip-input-flex, .btn, .delete-btn{touch-action:manipulation}
+    }
+  </style>
+
 <style>
 @supports not ((-webkit-backdrop-filter: blur(5px)) or (backdrop-filter: blur(5px))) {
   .bottom-nav{ background:#161616; }
 }
 </style>
+
+  <style>
+    /* Typography scale and spacing tokens */
+    :root{
+      --base-size:16px; /* root font size */
+      --space-1:0.25rem; /* 4px */
+      --space-2:0.5rem;  /* 8px */
+      --space-3:1rem;    /* 16px */
+      --space-4:1.5rem;  /* 24px */
+      --type-xl:1.375rem; /* 22px */
+      --type-lg:1.125rem; /* 18px */
+      --type-md:1rem;     /* 16px */
+      --type-sm:0. ninerem; /* placeholder to fix if needed */
+      --btn-pad-vertical:0.6rem;
+      --btn-pad-horizontal:0.9rem;
+    }
+    /* small correction: some browsers may not accept variable name with leading zero in value; ensure valid values */
+    :root{ --type-sm:0.9rem; }
+
+    html{font-size:var(--base-size);} body{font-size:var(--type-md);} 
+
+    /* Scale usages */
+    .title{font-size:var(--type-lg)}
+    .card-title{font-size:var(--type-md)}
+    .card h4, .card h5{font-size:var(--type-sm)}
+    .form-label{font-size:var(--type-sm)}
+    .btn{padding:var(--btn-pad-vertical) var(--btn-pad-horizontal);font-size:var(--type-sm)}
+    .form-input, .form-select, .input{padding:0.75rem;font-size:var(--type-sm)}
+    .table th,.table td{padding:0.5rem}
+    .panel{transition:transform .22s cubic-bezier(.2,.9,.2,1), opacity .18s ease; transform:translateY(10px); opacity:0}
+    .overlay{transition:opacity .18s ease, visibility .18s ease; opacity:0; visibility:hidden; pointer-events:none}
+    .overlay.show{opacity:1; visibility:visible; pointer-events:auto}
+    .overlay.show .panel{transform:translateY(0); opacity:1}
+
+    /* smoother modal open on small screens: slightly larger translate */
+    @media (max-width:640px){ .panel{transform:translateY(18px)} .overlay.show .panel{transform:translateY(0)} }
+
+    /* Make interactive elements larger on touch devices */
+    @media (hover: none) and (pointer: coarse){
+      .btn, .btn-icon{padding:0.8rem 1rem;border-radius:12px}
+      .delete-btn{font-size:22px}
+    }
+  </style>
 
   <style>
     #pwa-install-bar{position:fixed;top:0;left:0;right:0;z-index:9999;display:none;
